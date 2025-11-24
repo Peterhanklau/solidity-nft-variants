@@ -1,2 +1,2 @@
 # solidity-nft-variants
-Daily practice
+Daily practice solidity-nft-variants
