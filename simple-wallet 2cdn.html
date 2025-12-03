@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>简单钱包连接</title>
+    <!-- 使用多个备用CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+</head>
+<body>
+    <h2>简单钱包连接</h2>
+    <button onclick="connectWallet()">连接钱包</button>
+    
+    <div id="info" style="display:none; margin-top:20px;">
+        <p>地址: <span id="address"></span></p>
+        <p>余额: <span id="balance"></span> ETH</p>
+        <p>网络: <span id="network"></span></p>
+    </div>
+
+    <script>
+        async function connectWallet() {
+            console.log('按钮被点击了!');
+            
+            // 先检查 ethers 是否加载成功
+            if (typeof ethers === 'undefined') {
+                alert('ethers.js 库加载失败，请检查网络连接');
+                return;
+            }
+            
+            const infoDiv = document.getElementById("info");
+            
+            try {
+                // 1. 检查 MetaMask
+                if (typeof window.ethereum === 'undefined') {
+                    alert('请安装 MetaMask!');
+                    return;
+                }
+                console.log('MetaMask 已找到');
+                
+                // 2. 请求连接
+                const accounts = await window.ethereum.request({ 
+                    method: 'eth_requestAccounts' 
+                });
+                console.log('连接成功:', accounts[0]);
+                
+                // 3. 初始化 ethers.js
+                const provider = new ethers.providers.Web3Provider(window.ethereum);
+                const address = accounts[0];
+                const balance = await provider.getBalance(address);
+                const network = await provider.getNetwork();
+                
+                // 4. 显示信息
+                document.getElementById("address").textContent = address;
+                document.getElementById("balance").textContent = ethers.utils.formatEther(balance).substring(0, 8);
+                document.getElementById("network").textContent = `${network.name} (ID: ${network.chainId})`;
+                infoDiv.style.display = "block";
+                
+            } catch (error) {
+                console.error('错误:', error);
+                alert('连接失败: ' + error.message);
+            }
+        }
+    </script>
+</body>
+</html>
