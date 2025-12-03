@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>MetaMask钱包连接 - 作业1</title>
+    <!-- 引入ethers.js库 -->
+    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        button {
+            background-color: #f6851b;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        button:hover {
+            background-color: #e67817;
+        }
+        .info-box {
+            background-color: #f5f5f5;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+            border-left: 4px solid #f6851b;
+        }
+        .info-item {
+            margin: 10px 0;
+            font-size: 16px;
+        }
+        .label {
+            font-weight: bold;
+            color: #333;
+        }
+        .value {
+            color: #666;
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+    <h1>MetaMask钱包连接</h1>
+    <p>点击下方按钮连接你的MetaMask钱包</p>
+    
+    <!-- 连接钱包按钮 -->
+    <button onclick="connectWallet()">连接钱包</button>
+    
+    <!-- 账户信息显示区域（初始隐藏） -->
+    <div id="info" class="info-box" style="display:none;">
+        <h2>账户信息</h2>
+        
+        <!-- 显示当前账户地址 -->
+        <div class="info-item">
+            <span class="label">地址：</span>
+            <span id="address" class="value"></span>
+        </div>
+        
+        <!-- 显示账户余额 -->
+        <div class="info-item">
+            <span class="label">余额：</span>
+            <span id="balance" class="value"></span> ETH
+        </div>
+        
+        <!-- 显示当前网络 -->
+        <div class="info-item">
+            <span class="label">网络：</span>
+            <span id="network" class="value"></span>
+        </div>
+    </div>
+
+    <script>
+        /**
+         * 连接钱包的主函数
+         * 实现功能：连接钱包按钮 + 显示地址 + 显示余额 + 显示网络
+         */
+        async function connectWallet() {
+            console.log('正在连接钱包...');
+            
+            // ✅ 检查用户是否安装了MetaMask
+            if (typeof window.ethereum === 'undefined') {
+                alert('请先安装MetaMask钱包！\n访问: https://metamask.io/');
+                return;
+            }
+            
+            try {
+                // ✅ 连接钱包按钮功能
+                // 请求用户授权连接钱包
+                console.log('请求钱包连接...');
+                const accounts = await window.ethereum.request({ 
+                    method: 'eth_requestAccounts' 
+                });
+                
+                if (accounts.length === 0) {
+                    alert('用户拒绝了连接请求');
+                    return;
+                }
+                
+                // 创建ethers的provider
+                const provider = new ethers.providers.Web3Provider(window.ethereum);
+                
+                // ✅ 获取当前账户地址
+                const address = accounts[0];
+                console.log('连接成功，地址:', address);
+                
+                // ✅ 获取账户余额（ETH）
+                console.log('正在查询余额...');
+                const balance = await provider.getBalance(address);
+                // 将wei转换为ETH，保留4位小数
+                const balanceInEth = ethers.utils.formatEther(balance);
+                const formattedBalance = parseFloat(balanceInEth).toFixed(4);
+                
+                // ✅ 获取当前网络
+                console.log('正在查询网络...');
+                const network = await provider.getNetwork();
+                let networkName = network.name;
+                if (network.chainId === 1) networkName = '以太坊主网';
+                else if (network.chainId === 5) networkName = 'Goerli测试网';
+                else if (network.chainId === 11155111) networkName = 'Sepolia测试网';
+                
+                // 显示所有信息
+                displayWalletInfo(address, formattedBalance, networkName, network.chainId);
+                
+            } catch (error) {
+                console.error('连接失败:', error);
+                alert('连接失败: ' + (error.message || '未知错误'));
+            }
+        }
+        
+        /**
+         * 显示钱包信息的函数
+         * @param {string} address - 钱包地址
+         * @param {string} balance - 余额（ETH）
+         * @param {string} networkName - 网络名称
+         * @param {number} chainId - 网络ID
+         */
+        function displayWalletInfo(address, balance, networkName, chainId) {
+            // ✅ 显示当前账户地址
+            document.getElementById('address').textContent = address;
+            
+            // ✅ 显示账户余额
+            document.getElementById('balance').textContent = balance;
+            
+            // ✅ 显示当前网络
+            document.getElementById('network').textContent = `${networkName} (ID: ${chainId})`;
+            
+            // 显示信息区域
+            document.getElementById('info').style.display = 'block';
+            
+            // 更新按钮文字
+            document.querySelector('button').textContent = '已连接';
+            document.querySelector('button').style.backgroundColor = '#28a745';
+            
+            console.log('钱包信息显示完成');
+        }
+        
+        // 页面加载时的初始化
+        window.onload = function() {
+            console.log('钱包连接页面已加载');
+            console.log('请点击"连接钱包"按钮开始使用');
+        };
+    </script>
+</body>
+</html>
