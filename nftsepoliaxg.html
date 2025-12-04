@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Sepolia NFT一键查询器</title>
+    <style>
+        body { font-family: Arial; margin: 40px; background: #f5f5f5; }
+        .container { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); max-width: 800px; margin: auto; }
+        h2 { color: #333; }
+        button { background: #4CAF50; color: white; border: none; padding: 12px 25px; border-radius: 8px; font-size: 16px; cursor: pointer; margin: 10px 0; }
+        button:hover { background: #45a049; }
+        .nft-card { border: 1px solid #e0e0e0; padding: 20px; margin: 15px 0; border-radius: 10px; background: #fafafa; }
+        .nft-name { font-weight: bold; color: #2c3e50; font-size: 18px; }
+        .nft-collection { color: #7f8c8d; margin: 5px 0; }
+        .nft-id { background: #e8f4fc; padding: 5px 10px; border-radius: 5px; display: inline-block; margin-top: 10px; }
+        .loading, .error { padding: 15px; margin: 15px 0; border-radius: 8px; }
+        .loading { background: #e3f2fd; color: #1565c0; }
+        .error { background: #ffebee; color: #c62828; }
+        .success { background: #e8f5e9; color: #2e7d32; padding: 15px; border-radius: 8px; margin: 15px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>🔍 Sepolia NFT一键查询器</h2>
+        <p>输入你的钱包地址，使用Alchemy API直接查询Sepolia链上持有的NFT。</p>
+        
+        <input type="text" id="walletInput" placeholder="输入Sepolia钱包地址 (0x...)" value="<你的钱包地址>" style="width: 100%; padding: 12px; margin: 10px 0; border: 2px solid #ddd; border-radius: 8px; font-size: 16px;">
+        <button onclick="fetchNFTs()">开始查询我的NFT</button>
+        
+        <div id="loading" class="loading" style="display:none;">
+            <p>正在从Sepolia区块链查询数据，请稍候...</p>
+        </div>
+        
+        <div id="result"></div>
+    </div>
+
+    <script>
+        // Alchemy提供的Sepolia测试网NFT API端点 (无需API密钥的公开demo版)
+        const ALCHEMY_API_URL = "https://eth-sepolia.g.alchemy.com/nft/v2/demo/getNFTs";
+
+        async function fetchNFTs() {
+            const walletAddress = document.getElementById('walletInput').value.trim();
+            const resultDiv = document.getElementById('result');
+            const loadingDiv = document.getElementById('loading');
+
+            // 1. 验证地址格式
+            if (!walletAddress.startsWith('0x') || walletAddress.length !== 42) {
+                resultDiv.innerHTML = `<div class="error">❌ 请输入有效的以太坊地址 (以0x开头，42位字符)</div>`;
+                return;
+            }
+
+            // 2. 显示加载状态
+            resultDiv.innerHTML = '';
+            loadingDiv.style.display = 'block';
+
+            try {
+                // 3. 构建API请求URL
+                const apiUrl = `${ALCHEMY_API_URL}?owner=${walletAddress}&withMetadata=true`;
+
+                // 4. 发起请求
+                const response = await fetch(apiUrl);
+                
+                if (!response.ok) {
+                    throw new Error(`网络请求失败，状态码: ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                // 5. 处理并显示结果
+                loadingDiv.style.display = 'none';
+
+                // 检查是否有NFT
+                const ownedNFTs = data.ownedNfts || [];
+                
+                if (ownedNFTs.length === 0) {
+                    resultDiv.innerHTML = `<div class="error">🔍 在该地址下未找到任何NFT。请确保：<br>1. 地址无误；<br>2. 该地址在Sepolia测试网上确实持有NFT。</div>`;
+                    return;
+                }
+
+                // 显示成功信息和统计
+                resultDiv.innerHTML = `<div class="success">✅ 成功找到 <strong>${ownedNFTs.length}</strong> 个NFT资产</div>`;
+
+                // 显示每个NFT的详细信息
+                ownedNFTs.forEach(nft => {
+                    // 安全地获取NFT名称
+                    const name = nft.title || 
+                                nft.metadata?.name || 
+                                `${nft.contractMetadata?.symbol || 'NFT'} #${nft.id.tokenId}`;
+                    
+                    // 获取图片（优先使用可访问的格式）
+                    const image = nft.media?.[0]?.gateway || 
+                                 nft.media?.[0]?.thumbnail || 
+                                 nft.metadata?.image || 
+                                 'https://via.placeholder.com/300x300/e0e0e0/666?text=NFT+Image';
+
+                    const nftCard = document.createElement('div');
+                    nftCard.className = 'nft-card';
+                    nftCard.innerHTML = `
+                        <div class="nft-name">${name}</div>
+                        <div class="nft-collection">
+                            <strong>集合：</strong>${nft.contractMetadata?.name || '未知集合'}
+                            (${nft.contractMetadata?.symbol || '—'})
+                        </div>
+                        <div><strong>合约地址：</strong>${nft.contract.address}</div>
+                        <div><strong>Token ID：</strong><span class="nft-id">${nft.id.tokenId}</span></div>
+                        <div style="margin-top: 15px;">
+                            <img src="${image}" 
+                                 alt="${name}" 
+                                 style="max-width: 200px; max-height: 200px; border-radius: 5px;"
+                                 onerror="this.src='https://via.placeholder.com/200x200/e0e0e0/666?text=Image+Not+Available'">
+                        </div>
+                        <hr style="margin: 15px 0; border: none; border-top: 1px solid #eee;">
+                    `;
+                    resultDiv.appendChild(nftCard);
+                });
+
+            } catch (error) {
+                // 6. 错误处理
+                loadingDiv.style.display = 'none';
+                console.error('查询过程中出错:', error);
+                resultDiv.innerHTML = `<div class="error">❌ 查询失败: ${error.message}<br>可能原因：<br>1. 网络连接问题；<br>2. API服务暂时不可用。</div>`;
+            }
+        }
+
+        // 页面加载时，如果地址框已有内容，则自动查询
+        window.onload = function() {
+            const walletInput = document.getElementById('walletInput');
+            if (walletInput.value && walletInput.value.startsWith('0x') && walletInput.value.length === 42) {
+                fetchNFTs();
+            }
+        };
+    </script>
+</body>
+</html>
