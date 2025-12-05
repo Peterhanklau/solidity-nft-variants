@@ -1,0 +1,1042 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>简易拍卖平台</title>
+    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #fff;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 30px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        h1 {
+            font-size: 2.8rem;
+            background: linear-gradient(135deg, #00b4db, #0083b0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            color: #a0a0c0;
+            font-size: 1.2rem;
+        }
+        
+        .wallet-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 40px;
+            padding: 25px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .wallet-info {
+            display: flex;
+            gap: 30px;
+        }
+        
+        .info-item {
+            text-align: center;
+        }
+        
+        .info-label {
+            color: #a0a0c0;
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+        }
+        
+        .info-value {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #4fc3f7;
+        }
+        
+        .role-badge {
+            display: inline-block;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+        
+        .role-badge.seller {
+            background: linear-gradient(135deg, #ff416c, #ff4b2b);
+        }
+        
+        .role-badge.buyer {
+            background: linear-gradient(135deg, #00b09b, #96c93d);
+        }
+        
+        .btn {
+            padding: 14px 32px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, #ff416c, #ff4b2b);
+            color: white;
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #00b09b, #96c93d);
+            color: white;
+        }
+        
+        .btn-warning {
+            background: linear-gradient(135deg, #f7971e, #ffd200);
+            color: #333;
+        }
+        
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            margin-bottom: 40px;
+        }
+        
+        .auction-status {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 35px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .section-title {
+            font-size: 1.5rem;
+            margin-bottom: 25px;
+            color: #4fc3f7;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 18px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .status-label {
+            color: #a0a0c0;
+            font-size: 1rem;
+        }
+        
+        .status-value {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #fff;
+        }
+        
+        .status-value.highlight {
+            color: #4fc3f7;
+            font-size: 1.4rem;
+        }
+        
+        .bidder-address {
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            color: #ffcc00;
+            background: rgba(255, 204, 0, 0.1);
+            padding: 8px 15px;
+            border-radius: 8px;
+        }
+        
+        .actions-section {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 35px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .action-card {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.3s ease;
+        }
+        
+        .action-card:hover {
+            border-color: rgba(79, 195, 247, 0.3);
+            background: rgba(79, 195, 247, 0.05);
+        }
+        
+        .action-title {
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        input[type="number"] {
+            flex: 1;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.07);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            color: white;
+            font-size: 1rem;
+        }
+        
+        input[type="number"]:focus {
+            outline: none;
+            border-color: #4fc3f7;
+            box-shadow: 0 0 0 3px rgba(79, 195, 247, 0.1);
+        }
+        
+        .action-desc {
+            color: #a0a0c0;
+            font-size: 0.9rem;
+            margin-top: 15px;
+            line-height: 1.5;
+        }
+        
+        .countdown {
+            text-align: center;
+            padding: 30px;
+            background: linear-gradient(135deg, rgba(255, 65, 108, 0.1), rgba(255, 75, 43, 0.1));
+            border-radius: 15px;
+            margin-top: 30px;
+            border: 1px solid rgba(255, 65, 108, 0.2);
+        }
+        
+        .countdown-timer {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #ff416c;
+            margin: 10px 0;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            display: none;
+        }
+        
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(255, 255, 255, 0.1);
+            border-top: 5px solid #4fc3f7;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .error {
+            background: rgba(255, 0, 0, 0.1);
+            color: #ff6b6b;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #ff6b6b;
+            margin: 20px 0;
+            display: none;
+        }
+        
+        .success {
+            background: rgba(0, 255, 0, 0.1);
+            color: #4caf50;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #4caf50;
+            margin: 20px 0;
+            display: none;
+        }
+        
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .wallet-section {
+                flex-direction: column;
+                gap: 20px;
+                text-align: center;
+            }
+            
+            .wallet-info {
+                flex-direction: column;
+                gap: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-gavel"></i> 简易拍卖平台</h1>
+            <p class="subtitle">基于智能合约的透明、去中心化拍卖系统</p>
+        </header>
+        
+        <!-- 钱包连接和身份显示 -->
+        <div class="wallet-section">
+            <div class="wallet-info">
+                <div class="info-item">
+                    <div class="info-label">我的地址</div>
+                    <div id="userAddress" class="info-value">未连接</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">账户角色</div>
+                    <div id="userRole" class="role-badge buyer">未知</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">我的余额</div>
+                    <div id="userBalance" class="info-value">0 ETH</div>
+                </div>
+            </div>
+            <button id="connectWalletBtn" class="btn btn-primary" onclick="connectWallet()">
+                <i class="fas fa-wallet"></i> 连接钱包
+            </button>
+        </div>
+        
+        <!-- 错误和成功提示 -->
+        <div class="error" id="error"></div>
+        <div class="success" id="success"></div>
+        
+        <div class="main-content">
+            <!-- 左侧：拍卖状态 -->
+            <div class="auction-status">
+                <h2 class="section-title"><i class="fas fa-chart-line"></i> 拍卖状态</h2>
+                
+                <div class="status-item">
+                    <span class="status-label">拍卖品</span>
+                    <span class="status-value" id="auctionItem">NFT收藏品</span>
+                </div>
+                
+                <div class="status-item">
+                    <span class="status-label">拍卖状态</span>
+                    <span class="status-value" id="auctionStatus">进行中</span>
+                </div>
+                
+                <div class="status-item">
+                    <span class="status-label">拍卖创建者</span>
+                    <span class="status-value" id="sellerAddress">未加载</span>
+                </div>
+                
+                <div class="status-item">
+                    <span class="status-label">当前最高价</span>
+                    <span class="status-value highlight" id="highestBid">0 ETH</span>
+                </div>
+                
+                <div class="status-item">
+                    <span class="status-label">最高出价者</span>
+                    <span class="bidder-address" id="highestBidder">暂无出价</span>
+                </div>
+                
+                <div class="status-item">
+                    <span class="status-label">拍卖结束时间</span>
+                    <span class="status-value" id="auctionEndTime">未设置</span>
+                </div>
+                
+                <div class="status-item">
+                    <span class="status-label">我的出价</span>
+                    <span class="status-value" id="myBid">0 ETH</span>
+                </div>
+                
+                <div class="status-item">
+                    <span class="status-label">可退款金额</span>
+                    <span class="status-value" id="refundAmount">0 ETH</span>
+                </div>
+            </div>
+            
+            <!-- 右侧：操作区域 -->
+            <div class="actions-section">
+                <h2 class="section-title"><i class="fas fa-cogs"></i> 拍卖操作</h2>
+                
+                <!-- 出价功能 -->
+                <div class="action-card">
+                    <h3 class="action-title"><i class="fas fa-hand-holding-usd"></i> 出价竞拍</h3>
+                    <div class="input-group">
+                        <input type="number" id="bidAmount" placeholder="输入出价金额 (ETH)" step="0.001" min="0">
+                        <button id="bidBtn" class="btn btn-success" onclick="placeBid()" disabled>
+                            <i class="fas fa-paper-plane"></i> 出价
+                        </button>
+                    </div>
+                    <p class="action-desc">
+                        注意：出价必须高于当前最高价。竞标成功后，资金将被锁定直到拍卖结束。
+                    </p>
+                </div>
+                
+                <!-- 结束拍卖功能（卖家专用） -->
+                <div class="action-card" id="endAuctionCard" style="display: none;">
+                    <h3 class="action-title"><i class="fas fa-flag-checkered"></i> 结束拍卖</h3>
+                    <p class="action-desc">
+                        只有卖家可以结束拍卖。拍卖结束后，最高出价者将获得拍卖品，卖家获得资金。
+                    </p>
+                    <button id="endAuctionBtn" class="btn btn-danger" onclick="endAuction()" style="width: 100%;">
+                        <i class="fas fa-stop-circle"></i> 结束拍卖
+                    </button>
+                </div>
+                
+                <!-- 取回资金功能 -->
+                <div class="action-card">
+                    <h3 class="action-title"><i class="fas fa-money-bill-wave"></i> 取回资金</h3>
+                    <p class="action-desc">
+                        如果您不是当前最高出价者，可以取回您的出价资金。拍卖结束后，未中标者也可以取回资金。
+                    </p>
+                    <button id="withdrawBtn" class="btn btn-warning" onclick="withdrawFunds()" disabled style="width: 100%;">
+                        <i class="fas fa-wallet"></i> 取回资金
+                    </button>
+                </div>
+                
+                <!-- 倒计时 -->
+                <div class="countdown" id="countdownSection" style="display: none;">
+                    <div class="info-label">拍卖剩余时间</div>
+                    <div class="countdown-timer" id="countdownTimer">--:--:--</div>
+                    <div class="info-label">拍卖结束后自动结算</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 加载状态 -->
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>正在处理中...</p>
+        </div>
+    </div>
+
+    <script>
+        // 合约配置 - 请替换为你的实际合约地址和ABI
+        const CONTRACT_CONFIG = {
+            // 你的拍卖合约地址
+            address: "0x你的合约地址",
+            
+            // 拍卖合约ABI
+            abi: [
+                // 状态变量
+                "function seller() view returns (address)",
+                "function highestBidder() view returns (address)",
+                "function highestBid() view returns (uint256)",
+                "function auctionEndTime() view returns (uint256)",
+                "function ended() view returns (bool)",
+                
+                // 映射和数组
+                "function pendingReturns(address) view returns (uint256)",
+                
+                // 函数
+                "function bid() payable",
+                "function withdraw() returns (bool)",
+                "function auctionEnd()",
+                
+                // 事件
+                "event HighestBidIncreased(address bidder, uint256 amount)",
+                "event AuctionEnded(address winner, uint256 amount)"
+            ],
+            
+            // 网络配置
+            chainId: 11155111, // Sepolia测试网
+            networkName: "Sepolia测试网"
+        };
+
+        // 全局变量
+        let userAddress = null;
+        let userBalance = "0";
+        let contract = null;
+        let signer = null;
+        let provider = null;
+        let isSeller = false;
+        let auctionEndTime = 0;
+
+        // ✅ 页面加载初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log("拍卖平台初始化...");
+            initEventListeners();
+            
+            // 尝试自动连接钱包
+            autoConnectWallet();
+        });
+
+        // 初始化事件监听器
+        function initEventListeners() {
+            // 输入框实时验证
+            document.getElementById('bidAmount').addEventListener('input', validateBidAmount);
+            
+            // 监听MetaMask账户变化
+            if (window.ethereum) {
+                window.ethereum.on('accountsChanged', handleAccountsChanged);
+                window.ethereum.on('chainChanged', handleChainChanged);
+            }
+        }
+
+        // ✅ 自动连接钱包
+        async function autoConnectWallet() {
+            if (window.ethereum && window.ethereum.selectedAddress) {
+                try {
+                    userAddress = window.ethereum.selectedAddress;
+                    await initializeApp();
+                } catch (error) {
+                    console.log("自动连接失败:", error);
+                }
+            }
+        }
+
+        // ✅ 连接钱包功能
+        async function connectWallet() {
+            console.log("连接钱包...");
+            
+            if (typeof window.ethereum === 'undefined') {
+                showError('请安装MetaMask钱包');
+                return;
+            }
+            
+            showLoading(true);
+            
+            try {
+                // 请求连接钱包
+                const accounts = await window.ethereum.request({
+                    method: 'eth_requestAccounts'
+                });
+                
+                userAddress = accounts[0];
+                console.log("钱包已连接:", userAddress);
+                
+                // 初始化应用
+                await initializeApp();
+                
+            } catch (error) {
+                console.error("连接失败:", error);
+                showError('连接失败: ' + error.message);
+                showLoading(false);
+            }
+        }
+
+        // 处理账户变化
+        async function handleAccountsChanged(accounts) {
+            if (accounts.length === 0) {
+                // 用户断开连接
+                resetApp();
+            } else {
+                userAddress = accounts[0];
+                await initializeApp();
+            }
+        }
+
+        // 处理网络变化
+        function handleChainChanged(chainId) {
+            console.log("网络切换:", chainId);
+            window.location.reload();
+        }
+
+        // ✅ 初始化应用
+        async function initializeApp() {
+            try {
+                // 初始化provider和signer
+                provider = new ethers.providers.Web3Provider(window.ethereum);
+                signer = provider.getSigner();
+                
+                // 获取用户余额
+                const balance = await provider.getBalance(userAddress);
+                userBalance = ethers.utils.formatEther(balance);
+                
+                // ✅ 显示用户身份信息
+                updateUserInfo();
+                
+                // 初始化合约
+                await initializeContract();
+                
+                // 加载拍卖状态
+                await loadAuctionStatus();
+                
+                // 检查用户角色
+                await checkUserRole();
+                
+                // 更新UI状态
+                updateUI();
+                
+                showSuccess('钱包连接成功！');
+                showLoading(false);
+                
+            } catch (error) {
+                console.error("初始化失败:", error);
+                showError('初始化失败: ' + error.message);
+                showLoading(false);
+            }
+        }
+
+        // ✅ 初始化合约
+        async function initializeContract() {
+            try {
+                contract = new ethers.Contract(
+                    CONTRACT_CONFIG.address,
+                    CONTRACT_CONFIG.abi,
+                    signer
+                );
+                
+                console.log("合约已初始化");
+                
+                // 监听合约事件
+                setupContractEvents();
+                
+            } catch (error) {
+                console.error("合约初始化失败:", error);
+                throw new Error('无法连接到拍卖合约，请检查合约地址和网络');
+            }
+        }
+
+        // ✅ 设置合约事件监听
+        function setupContractEvents() {
+            // 监听出价事件
+            contract.on("HighestBidIncreased", (bidder, amount) => {
+                console.log("新的最高出价:", bidder, ethers.utils.formatEther(amount), "ETH");
+                showSuccess(`新的最高出价: ${ethers.utils.formatEther(amount)} ETH`);
+                
+                // 刷新拍卖状态
+                loadAuctionStatus();
+            });
+            
+            // 监听拍卖结束事件
+            contract.on("AuctionEnded", (winner, amount) => {
+                console.log("拍卖结束! 获胜者:", winner, "金额:", ethers.utils.formatEther(amount), "ETH");
+                showSuccess(`拍卖结束! 获胜者获得 ${ethers.utils.formatEther(amount)} ETH`);
+                
+                // 刷新拍卖状态
+                loadAuctionStatus();
+            });
+        }
+
+        // ✅ 加载拍卖状态
+        async function loadAuctionStatus() {
+            try {
+                console.log("加载拍卖状态...");
+                
+                // 获取拍卖基本信息
+                const seller = await contract.seller();
+                const highestBidder = await contract.highestBidder();
+                const highestBid = await contract.highestBid();
+                const ended = await contract.ended();
+                auctionEndTime = await contract.auctionEndTime();
+                
+                // 获取用户的可退款金额
+                let pendingReturn = ethers.BigNumber.from(0);
+                if (userAddress) {
+                    pendingReturn = await contract.pendingReturns(userAddress);
+                }
+                
+                // ✅ 显示拍卖状态信息
+                updateAuctionDisplay(
+                    seller,
+                    highestBidder,
+                    highestBid,
+                    ended,
+                    auctionEndTime,
+                    pendingReturn
+                );
+                
+                // 更新倒计时
+                updateCountdown();
+                
+            } catch (error) {
+                console.error("加载拍卖状态失败:", error);
+                showError('无法加载拍卖状态: ' + error.message);
+            }
+        }
+
+        // ✅ 更新拍卖显示
+        function updateAuctionDisplay(seller, highestBidder, highestBid, ended, endTime, pendingReturn) {
+            // 更新卖家地址
+            document.getElementById('sellerAddress').textContent = 
+                `${seller.substring(0, 6)}...${seller.substring(38)}`;
+            
+            // 更新最高出价者
+            if (highestBidder === ethers.constants.AddressZero) {
+                document.getElementById('highestBidder').textContent = "暂无出价";
+            } else {
+                document.getElementById('highestBidder').textContent = 
+                    `${highestBidder.substring(0, 6)}...${highestBidder.substring(38)}`;
+            }
+            
+            // 更新最高出价
+            const highestBidEth = ethers.utils.formatEther(highestBid);
+            document.getElementById('highestBid').textContent = `${highestBidEth} ETH`;
+            
+            // 更新拍卖状态
+            const status = ended ? "已结束" : "进行中";
+            document.getElementById('auctionStatus').textContent = status;
+            document.getElementById('auctionStatus').style.color = ended ? "#ff6b6b" : "#4caf50";
+            
+            // 更新结束时间
+            const endDate = new Date(endTime * 1000);
+            document.getElementById('auctionEndTime').textContent = 
+                endDate.toLocaleString();
+            
+            // 更新可退款金额
+            const refundEth = ethers.utils.formatEther(pendingReturn);
+            document.getElementById('refundAmount').textContent = `${refundEth} ETH`;
+            
+            // 更新我的出价（简化处理，实际应该查询用户的具体出价）
+            if (userAddress === highestBidder) {
+                document.getElementById('myBid').textContent = `${highestBidEth} ETH`;
+            }
+            
+            // 显示/隐藏倒计时
+            if (!ended && endTime > Math.floor(Date.now() / 1000)) {
+                document.getElementById('countdownSection').style.display = 'block';
+            } else {
+                document.getElementById('countdownSection').style.display = 'none';
+            }
+        }
+
+        // ✅ 检查用户角色
+        async function checkUserRole() {
+            try {
+                const seller = await contract.seller();
+                isSeller = (userAddress.toLowerCase() === seller.toLowerCase());
+                
+                // 更新角色显示
+                updateRoleDisplay();
+                
+                // 显示/隐藏卖家功能
+                document.getElementById('endAuctionCard').style.display = isSeller ? 'block' : 'none';
+                
+            } catch (error) {
+                console.error("检查用户角色失败:", error);
+            }
+        }
+
+        // ✅ 更新用户信息
+        function updateUserInfo() {
+            if (userAddress) {
+                // 显示地址
+                document.getElementById('userAddress').textContent = 
+                    `${userAddress.substring(0, 6)}...${userAddress.substring(38)}`;
+                
+                // 显示余额
+                document.getElementById('userBalance').textContent = 
+                    `${parseFloat(userBalance).toFixed(4)} ETH`;
+                
+                // 更新按钮状态
+                document.getElementById('connectWalletBtn').innerHTML = 
+                    '<i class="fas fa-check-circle"></i> 已连接';
+                document.getElementById('connectWalletBtn').style.background = 
+                    'linear-gradient(135deg, #00b09b, #96c93d)';
+                
+                // 启用出价按钮
+                document.getElementById('bidBtn').disabled = false;
+            }
+        }
+
+        // ✅ 更新角色显示
+        function updateRoleDisplay() {
+            const roleElement = document.getElementById('userRole');
+            
+            if (isSeller) {
+                roleElement.textContent = "卖家";
+                roleElement.className = "role-badge seller";
+            } else if (userAddress) {
+                roleElement.textContent = "买家";
+                roleElement.className = "role-badge buyer";
+            } else {
+                roleElement.textContent = "未知";
+                roleElement.className = "role-badge buyer";
+            }
+        }
+
+        // ✅ 验证出价金额
+        function validateBidAmount() {
+            const bidAmount = document.getElementById('bidAmount').value;
+            const bidBtn = document.getElementById('bidBtn');
+            
+            if (!bidAmount || parseFloat(bidAmount) <= 0) {
+                bidBtn.disabled = true;
+                return false;
+            }
+            
+            // 检查余额是否足够
+            if (parseFloat(bidAmount) > parseFloat(userBalance)) {
+                showError('余额不足');
+                bidBtn.disabled = true;
+                return false;
+            }
+            
+            bidBtn.disabled = false;
+            return true;
+        }
+
+        // ✅ 出价功能
+        async function placeBid() {
+            const bidAmount = document.getElementById('bidAmount').value;
+            
+            if (!validateBidAmount()) {
+                showError('请输入有效的出价金额');
+                return;
+            }
+            
+            if (!userAddress) {
+                showError('请先连接钱包');
+                return;
+            }
+            
+            showLoading(true);
+            
+            try {
+                console.log(`正在出价: ${bidAmount} ETH`);
+                
+                // 转换为wei
+                const bidAmountWei = ethers.utils.parseEther(bidAmount);
+                
+                // 调用合约的bid函数
+                const tx = await contract.bid({
+                    value: bidAmountWei
+                });
+                
+                showSuccess('出价交易已发送，等待确认...');
+                console.log("交易哈希:", tx.hash);
+                
+                // 等待交易确认
+                const receipt = await tx.wait();
+                console.log("交易确认:", receipt);
+                
+                showSuccess('出价成功！');
+                
+                // 清空输入框
+                document.getElementById('bidAmount').value = '';
+                
+                // 刷新状态
+                await loadAuctionStatus();
+                
+            } catch (error) {
+                console.error("出价失败:", error);
+                showError('出价失败: ' + error.message);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // ✅ 结束拍卖功能（卖家专用）
+        async function endAuction() {
+            if (!isSeller) {
+                showError('只有卖家可以结束拍卖');
+                return;
+            }
+            
+            if (!confirm('确定要结束拍卖吗？此操作不可撤销。')) {
+                return;
+            }
+            
+            showLoading(true);
+            
+            try {
+                console.log("结束拍卖...");
+                
+                // 调用合约的auctionEnd函数
+                const tx = await contract.auctionEnd();
+                
+                showSuccess('结束拍卖交易已发送，等待确认...');
+                console.log("交易哈希:", tx.hash);
+                
+                // 等待交易确认
+                const receipt = await tx.wait();
+                console.log("交易确认:", receipt);
+                
+                showSuccess('拍卖已成功结束！');
+                
+                // 刷新状态
+                await loadAuctionStatus();
+                await checkUserRole();
+                
+            } catch (error) {
+                console.error("结束拍卖失败:", error);
+                showError('结束拍卖失败: ' + error.message);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // ✅ 取回资金功能
+        async function withdrawFunds() {
+            if (!userAddress) {
+                showError('请先连接钱包');
+                return;
+            }
+            
+            showLoading(true);
+            
+            try {
+                console.log("取回资金...");
+                
+                // 调用合约的withdraw函数
+                const tx = await contract.withdraw();
+                
+                showSuccess('取回资金交易已发送，等待确认...');
+                console.log("交易哈希:", tx.hash);
+                
+                // 等待交易确认
+                const receipt = await tx.wait();
+                console.log("交易确认:", receipt);
+                
+                showSuccess('资金取回成功！');
+                
+                // 刷新状态
+                await loadAuctionStatus();
+                await updateUserBalance();
+                
+            } catch (error) {
+                console.error("取回资金失败:", error);
+                showError('取回资金失败: ' + error.message);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // 更新用户余额
+        async function updateUserBalance() {
+            if (userAddress && provider) {
+                const balance = await provider.getBalance(userAddress);
+                userBalance = ethers.utils.formatEther(balance);
+                document.getElementById('userBalance').textContent = 
+                    `${parseFloat(userBalance).toFixed(4)} ETH`;
+            }
+        }
+
+        // ✅ 更新倒计时
+        function updateCountdown() {
+            if (!auctionEndTime || auctionEndTime === 0) return;
+            
+            const now = Math.floor(Date.now() / 1000);
+            const timeLeft = auctionEndTime - now;
+            
+            if (timeLeft <= 0) {
+                document.getElementById('countdownTimer').textContent = "已结束";
+                return;
+            }
+            
+            // 计算时分秒
+            const hours = Math.floor(timeLeft / 3600);
+            const minutes = Math.floor((timeLeft % 3600) / 60);
+            const seconds = timeLeft % 60;
+            
+            // 格式化显示
+            const formattedTime = 
+                `${hours.toString().padStart(2, '0')}:` +
+                `${minutes.toString().padStart(2, '0')}:` +
+                `${seconds.toString().padStart(2, '0')}`;
+            
+            document.getElementById('countdownTimer').textContent = formattedTime;
+            
+            // 每秒更新一次
+            setTimeout(updateCountdown, 1000);
+        }
+
+        // 更新UI状态
+        function updateUI() {
+            const withdrawBtn = document.getElementById('withdrawBtn');
+            // 简单启用取回按钮，实际应该根据用户是否有可退款金额来决定
+            withdrawBtn.disabled = false;
+        }
+
+        // 重置应用
+        function resetApp() {
+            userAddress = null;
+            contract = null;
+            isSeller = false;
+            
+            document.getElementById('userAddress').textContent = "未连接";
+            document.getElementById('userBalance').textContent = "0 ETH";
+            document.getElementById('userRole').textContent = "未知";
+            document.getElementById('userRole').className = "role-badge buyer";
+            
+            document.getElementById('connectWalletBtn').innerHTML = 
+                '<i class="fas fa-wallet"></i> 连接钱包';
+            document.getElementById('connectWalletBtn').style.background = 
+                'linear-gradient(135deg, #667eea, #764ba2)';
+            
+            document.getElementById('bidBtn').disabled = true;
+            document.getElementById('endAuctionCard').style.display = 'none';
+        }
+
+        // 工具函数：显示/隐藏加载状态
+        function showLoading(show) {
+            document.getElementById('loading').style.display = show ? 'block' : 'none';
+        }
+
+        // 工具函数：显示错误
+        function showError(message) {
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            
+            // 3秒后自动隐藏
+            setTimeout(() => {
+                errorDiv.style.display = 'none';
+            }, 5000);
+        }
+
+        // 工具函数：显示成功消息
+        function showSuccess(message) {
+            const successDiv = document.getElementById('success');
+            successDiv.textContent = message;
+            successDiv.style.display = 'block';
+            
+            // 3秒后自动隐藏
+            setTimeout(() => {
+                successDiv.style.display = 'none';
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
+
+
+   
