@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>FitClub会员测试</title>
+    <style>
+        body { font-family: Arial; padding: 20px; }
+        button { margin: 5px; padding: 10px; }
+        .card { border: 1px solid #ccc; padding: 15px; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h1>FitClub会员NFT测试</h1>
+    
+    <div>
+        <button onclick="connectWallet()">🔗 连接钱包</button>
+        <span id="walletStatus">未连接</span>
+    </div>
+    
+    <div id="memberSection" style="display:none;">
+        <h3>购买会员：</h3>
+        <button onclick="buyMembership(0)">标准会员</button>
+        <button onclick="buyMembership(1)">高级会员</button>
+        <button onclick="buyMembership(2)">VIP会员</button>
+        
+        <h3>我的会员信息：</h3>
+        <button onclick="checkMembership()">刷新</button>
+        <div id="myMembership">无会员</div>
+    </div>
+
+    <script src="https://cdn.ethers.io/lib/ethers-5.2.umd.min.js"></script>
+    <script>
+        let provider, signer, contract;
+        const CONTRACT_ADDRESS = "0xYourDeployedContractAddress"; // 在Remix部署后复制
+        const CONTRACT_ABI = [
+            "function buyMembership(uint256 level) external payable",
+            "function getUserMembership(address user) view returns (uint256,uint256,uint256,uint256,uint256)",
+            "function getPrice(uint256 level) view returns (uint256)",
+            "function balanceOf(address owner) view returns (uint256)"
+        ];
+        
+        async function connectWallet() {
+            if (window.ethereum) {
+                try {
+                    provider = new ethers.BrowserProvider(window.ethereum);
+                    signer = await provider.getSigner();
+                    const address = await signer.getAddress();
+                    
+                    document.getElementById('walletStatus').innerHTML = 
+                        `已连接: ${address.slice(0,6)}...${address.slice(-4)}`;
+                    document.getElementById('memberSection').style.display = 'block';
+                    
+                    // 连接合约实例
+                    contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+                    
+                    // 自动检查会员状态
+                    checkMembership();
+                    
+                } catch (error) {
+                    alert("连接失败: " + error.message);
+                }
+            } else {
+                alert("请安装MetaMask!");
+            }
+        }
+        
+        async function buyMembership(level) {
+            try {
+                // 获取价格
+                const price = await contract.getPrice(level);
+                
+                // 发送交易
+                const tx = await contract.buyMembership(level, {
+                    value: price
+                });
+                
+                alert("交易已提交！等待确认...");
+                await tx.wait(); // 等待区块确认
+                alert("✅ 购买成功！");
+                
+                // 刷新会员信息
+                checkMembership();
+                
+            } catch (error) {
+                alert("购买失败: " + error.message);
+            }
+        }
+        
+        async function checkMembership() {
+            try {
+                const userAddress = await signer.getAddress();
+                const result = await contract.getUserMembership(userAddress);
+                
+                // result包含: [tokenId, level, expirationDate, discountRate, daysRemaining]
+                const [tokenId, level, expirationDate, discountRate, daysRemaining] = result;
+                
+                if (tokenId == 0) {
+                    document.getElementById('myMembership').innerHTML = 
+                        '<div class="card">暂无会员，请购买</div>';
+                } else {
+                    const levelNames = ["标准", "高级", "VIP"];
+                    const date = new Date(Number(expirationDate) * 1000);
+                    
+                    document.getElementById('myMembership').innerHTML = `
+                        <div class="card">
+                            <h4>🎟️ 会员卡 #${tokenId}</h4>
+                            <p><strong>等级:</strong> ${levelNames[level]}</p>
+                            <p><strong>折扣:</strong> ${100 - discountRate}% off</p>
+                            <p><strong>过期时间:</strong> ${date.toLocaleDateString()}</p>
+                            <p><strong>剩余天数:</strong> ${daysRemaining} 天</p>
+                            ${daysRemaining == 0 ? '<p style="color:red;">⚠️ 已过期</p>' : ''}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error("获取会员信息失败:", error);
+            }
+        }
+    </script>
+</body>
+</html>
