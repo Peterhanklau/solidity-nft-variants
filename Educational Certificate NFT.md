@@ -14,7 +14,7 @@ An ERC721-based educational certificate NFT system implementing non-transferable
 
 ---
 
-## 2. Core Functions
+2. Core Functions
 
 | Function | Description | Access |
 |----------|-------------|--------|
@@ -26,7 +26,7 @@ An ERC721-based educational certificate NFT system implementing non-transferable
 
 ---
 
-## 3. Data Structure
+3. Data Structure
 
 ```solidity
 struct CertificateMetadata {
