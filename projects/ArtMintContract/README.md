@@ -51,3 +51,13 @@ Common Troubleshooting
 RPC 404 / connection timeout: Replace with available public Sepolia RPC nodes.
 Deployment succeeded but verification timed out: Remove auto-verification logic inside script, run verify command manually at midnight.
 NPM vulnerability alerts: Vulnerabilities only exist in dev dependencies, no impact on on-chain contract security, no need to fix.
+
+## Project Delivery Materials List
+•contracts/ directory: Solidity NFT contract source code (core business logic)
+•scripts/ directory: Deployment scripts, merkle root setup scripts (essential for deployment/operation)
+•test/ directory: Unit test cases (function verification, compliance testing)
+•hardhat.config.js: Adaptive network configuration file (local + Sepolia dual-environment adaptation)
+•package.json, package-lock.json: Project dependency configuration (ensure environment consistency)
+•.env.example: Environment variable template (no sensitive information, for receiver configuration)
+•README.md: Project usage instructions (installation, deployment, debugging guidance)
+•Technical Documentation.md: Project technical architecture, contract interfaces, security instructions (for development/audit docking)
